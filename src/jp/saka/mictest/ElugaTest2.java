@@ -107,12 +107,15 @@ public class ElugaTest2 extends Activity
 
 					if (mAudioTrackThread != null && mAudioRecordThread != null) {
 						mAudioTrackThread.terminate();
-						mAudioTrackThread = null;
 						mAudioRecordThread.terminate();
 						mAudioRecordThread = null;
 						delay = false;
 						Log.d("sakalog", "setMode(MODE_NORMAL)");
 						mAudioManager.setMode(AudioManager.MODE_NORMAL);
+						//Eluga-X対策(ヘッドセット接続したまま繰り返すとデッドロックして端末再起動が必要になる件)
+						//AudioTrackをreleaseする前に、setMode(NORMAL)を実行すること。
+						mAudioTrackThread.release();
+						mAudioTrackThread = null;
 						Log.d("sakalog", "setSpeakerphoneOn(false)");
 						mAudioManager.setSpeakerphoneOn(false);
 					} else {
@@ -146,9 +149,12 @@ public class ElugaTest2 extends Activity
 						mAudioRecordThread.terminate();
 						mAudioRecordThread = null;
 						mAudioTrackThread.terminate();
-						mAudioTrackThread = null;
 						Log.d("sakalog", "setMode(MODE_NORMAL)");
 						mAudioManager.setMode(AudioManager.MODE_NORMAL);
+						//Eluga-X対策(ヘッドセット接続したまま繰り返すとデッドロックして端末再起動が必要になる件)
+						//AudioTrackをreleaseする前に、setMode(NORMAL)を実行すること。
+						mAudioTrackThread.release();
+						mAudioTrackThread = null;
 						Log.d("sakalog", "setSpeakerphoneOn(false)");
 						mAudioManager.setSpeakerphoneOn(false);
 					}
@@ -382,16 +388,30 @@ public class ElugaTest2 extends Activity
 				onStarted(true);
 			}
 
-			try {
-				Log.d("sakalog", "AudioTrack#release");
-				//Thread.sleep(100);
-				mAudioTrack.release();
-				//Thread.sleep(300);
-				Log.d("sakalog", "AudioTrack#release ok");
-			} catch (Exception e) {
-				Log.d("sakalog", "AudioTrack#release exception occur");
-			}
+//Eluga-X対策(ヘッドセット接続したまま繰り返すとデッドロックして端末再起動が必要になる件)
+//AudioTrackをreleaseする前に、setMode(NORMAL)を実行すること。
+//			try {
+//				Log.d("sakalog", "AudioTrack#release");
+//				//Thread.sleep(100);
+//				mAudioTrack.release();
+//				//Thread.sleep(300);
+//				Log.d("sakalog", "AudioTrack#release ok");
+//			} catch (Exception e) {
+//				Log.d("sakalog", "AudioTrack#release exception occur");
+//			}
 
+		}
+
+		public void release() {
+			if (mAudioTrack != null) {
+				try {
+					Log.d("sakalog", "AudioTrack#release");
+					mAudioTrack.release();
+					Log.d("sakalog", "AudioTrack#release ok");
+				} catch (Exception e) {
+					Log.d("sakalog", "AudioTrack#release exception occur");
+				}
+			}
 		}
 
 		private void loop() {
